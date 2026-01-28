@@ -1,7 +1,14 @@
-import { Model, Sequelize, DataTypes } from 'sequelize';
+import { Model, Sequelize, DataTypes } from "sequelize";
+import bcrypt from "bcrypt";
 
 export default (sequelize: Sequelize) => {
-  class User extends Model {}
+ class User extends Model {
+  public user_id!: number;
+  public username!: string;
+  public email!: string;
+  public password!: string;
+  public role!: "Admin" | "user";
+}
 
   User.init(
     {
@@ -25,17 +32,28 @@ export default (sequelize: Sequelize) => {
         allowNull: false,
       },
       role: {
-        type: DataTypes.ENUM('Admin', 'user'),
+        type: DataTypes.ENUM("Admin", "user"),
         allowNull: false,
-        defaultValue:'user',
+        defaultValue: "user",
       },
     },
     {
       sequelize,
-      tableName: 'user',
-      modelName: 'User',
+      tableName: "user",
+      modelName: "User",
     }
   );
+
+  User.beforeCreate(async (user: any) => {
+    user.password = await bcrypt.hash(user.password, 10);
+  });
+
+ 
+  User.beforeUpdate(async (user: any) => {
+    if (user.changed("password")) {
+      user.password = await bcrypt.hash(user.password, 10);
+    }
+  });
 
   return User;
 };
